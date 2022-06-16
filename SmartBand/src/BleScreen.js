@@ -26,7 +26,7 @@ import React, {
   const BleManagerModule = NativeModules.BleManager;
   const bleManagerEmitter = new NativeEventEmitter(BleManagerModule);
   
-  const App = () => {
+  const App = ({navigation}) => {
 	const [isScanning, setIsScanning] = useState(false);
 	const peripherals = new Map();
 	const [list, setList] = useState([]);
