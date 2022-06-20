@@ -148,72 +148,64 @@ import React, {
 			  });
 			}
 		});
-	  }  
+	  }
+	  
+	  retrieveConnected();
 	  
 	  return (() => {
-		console.log('unmount');
-		bleManagerEmitter.removeListener('BleManagerDiscoverPeripheral', handleDiscoverPeripheral);
-		bleManagerEmitter.removeListener('BleManagerStopScan', handleStopScan );
-		bleManagerEmitter.removeListener('BleManagerDisconnectPeripheral', handleDisconnectedPeripheral );
-		bleManagerEmitter.removeListener('BleManagerDidUpdateValueForCharacteristic', handleUpdateValueForCharacteristic );
+		
 	  })
 	}, []);
   
 	const renderItem = (item) => {
 	  const color = item.connected ? 'green' : '#fff';
 	  return (
-		<TouchableHighlight onPress={() => testPeripheral(item) }>
+		<View>
 		  <View style={[styles.row, {backgroundColor: color}]}>
 			<Text style={{fontSize: 12, textAlign: 'center', color: '#333333', padding: 10}}>{item.name}</Text>
 			<Text style={{fontSize: 10, textAlign: 'center', color: '#333333', padding: 2}}>RSSI: {item.rssi}</Text>
 			<Text style={{fontSize: 8, textAlign: 'center', color: '#333333', padding: 2, paddingBottom: 20}}>{item.id}</Text>
 		  </View>
-		</TouchableHighlight>
+		</View>
 	  );
 	}
   
 	return (
-	  <>
-		<StatusBar barStyle="dark-content" />
-		<SafeAreaView>
-		  <ScrollView
-			contentInsetAdjustmentBehavior="automatic"
-			style={styles.scrollView}>
-			{global.HermesInternal == null ? null : (
-			  <View style={styles.engine}>
-				<Text style={styles.footer}>Engine: Hermes</Text>
-			  </View>
-			)}
-			<View style={styles.body}>
-			  
-			  <View style={{margin: 10}}>
-				<Button 
-				  title={'Scan Bluetooth (' + (isScanning ? 'on' : 'off') + ')'}
-				  onPress={() => startScan() } 
-				/>            
-			  </View>
-  
-			  <View style={{margin: 10}}>
-				<Button title="Retrieve connected peripherals" onPress={() => retrieveConnected() } />
-			  </View>
-  
-			  {(list.length == 0) &&
-				<View style={{flex:1, margin: 20}}>
-				  <Text style={{textAlign: 'center'}}>No peripherals</Text>
-				</View>
-			  }
-			
-			</View>              
-		  </ScrollView>
-		  <FlatList
-			  data={list}
-			  renderItem={({ item }) => renderItem(item) }
-			  keyExtractor={item => item.id}
-			/>              
-		</SafeAreaView>
-	  </>
-	);
-  };
+    <>
+      <StatusBar barStyle="dark-content" />
+      <SafeAreaView>
+        <ScrollView
+          contentInsetAdjustmentBehavior="automatic"
+          style={styles.scrollView}>
+          {global.HermesInternal == null ? null : (
+            <View style={styles.engine}>
+              <Text style={styles.footer}>Engine: Hermes</Text>
+            </View>
+          )}
+          <View style={styles.body}>
+            <View style={{margin: 10}}>
+              <Button
+                title="Reload"
+                onPress={() => retrieveConnected()}
+              />
+            </View>
+
+            {list.length == 0 && (
+              <View style={{flex: 1, margin: 20}}>
+                <Text style={{textAlign: 'center'}}>No peripherals</Text>
+              </View>
+            )}
+          </View>
+        </ScrollView>
+        <FlatList
+          data={list}
+          renderItem={({item}) => renderItem(item)}
+          keyExtractor={item => item.id}
+        />
+      </SafeAreaView>
+    </>
+  );
+};
   
   const styles = StyleSheet.create({
 	scrollView: {

@@ -158,14 +158,34 @@ import React, {
 	const renderItem = (item) => {
 	  const color = item.connected ? 'green' : '#fff';
 	  return (
-		<TouchableHighlight onPress={() => testPeripheral(item) }>
-		  <View style={[styles.row, {backgroundColor: color}]}>
-			<Text style={{fontSize: 12, textAlign: 'center', color: '#333333', padding: 10}}>{item.name}</Text>
-			<Text style={{fontSize: 10, textAlign: 'center', color: '#333333', padding: 2}}>RSSI: {item.rssi}</Text>
-			<Text style={{fontSize: 8, textAlign: 'center', color: '#333333', padding: 2, paddingBottom: 20}}>{item.id}</Text>
-		  </View>
-		</TouchableHighlight>
-	  );
+      <View style={{flex: 1}}>
+        <View
+          style={[styles.row, {backgroundColor: color}]}
+          flexDirection="row">
+          <Text
+            style={{
+              fontSize: 12,
+              textAlign: 'center',
+              color: '#333333',
+              padding: 10,
+            }}>
+            {item.name}
+          </Text>
+          <Button
+            title="disconnect"
+            onPress={() =>
+              BleMaagner.disconnect(item.id)
+                .then(() => {
+                  console.log('Disconnected');
+                })
+                .catch(error => {
+                  console.log(error);
+                })
+            }
+          />
+        </View>
+      </View>
+    );
 	}
   
 	return (
@@ -181,16 +201,8 @@ import React, {
 			  </View>
 			)}
 			<View style={styles.body}>
-			  
 			  <View style={{margin: 10}}>
-				<Button 
-				  title={'Scan Bluetooth (' + (isScanning ? 'on' : 'off') + ')'}
-				  onPress={() => startScan() } 
-				/>            
-			  </View>
-  
-			  <View style={{margin: 10}}>
-				<Button title="Retrieve connected peripherals" onPress={() => retrieveConnected() } />
+				<Button title="Reload" onPress={() => retrieveConnected() } />
 			  </View>
   
 			  {(list.length == 0) &&
