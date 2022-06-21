@@ -132,23 +132,59 @@ import React, {
 	  bleManagerEmitter.addListener('BleManagerDiscoverPeripheral', handleDiscoverPeripheral);
 	  bleManagerEmitter.addListener('BleManagerStopScan', handleStopScan );
 	  bleManagerEmitter.addListener('BleManagerDisconnectPeripheral', handleDisconnectedPeripheral );
-	  bleManagerEmitter.addListener('BleManagerDidUpdateValueForCharacteristic', handleUpdateValueForCharacteristic );
+	  //bleManagerEmitter.addListener('BleManagerDidUpdateValueForCharacteristic', handleUpdateValueForCharacteristic );
   
 	  if (Platform.OS === 'android' && Platform.Version >= 23) {
 		PermissionsAndroid.check(PermissionsAndroid.PERMISSIONS.ACCESS_COARSE_LOCATION).then((result) => {
 			if (result) {
-			  console.log("Permission is OK");
+				console.log("Bluetooth Permission is OK");
+				locPermission = true;
 			} else {
-			  PermissionsAndroid.request(PermissionsAndroid.PERMISSIONS.ACCESS_COARSE_LOCATION).then((result) => {
-				if (result) {
-				  console.log("User accept");
-				} else {
-				  console.log("User refuse");
-				}
-			  });
+				console.log("Bluetooth Permission has denied")
+				locPermission = false;
 			}
 		});
-	  }  
+		PermissionsAndroid.check(PermissionsAndroid.PERMISSIONS.BLUETOOTH_SCAN).then((result) => {
+			if (result) {
+				console.log("Scan Permission is OK");
+				scanPermission = true;
+			} else {
+				console.log("Scan Permission has denied");
+				scanPermission = false;
+			}
+		});
+		PermissionsAndroid.check(PermissionsAndroid.PERMISSIONS.BLUETOOTH_CONNECT).then((result) => {
+			if (result) {
+				console.log("Connect Permission is OK");
+				connectPermission = true;
+			} else {
+				console.log("Connect Permission has denied");
+				connectPermission = false;
+			}
+		});
+
+		if (locPermission && scanPermission && connectPermission) {
+			console.log("All Permission is OK");
+		} else {
+			PermissionsAndroid.requestMultiple([
+				PermissionsAndroid.PERMISSIONS.ACCESS_COARSE_LOCATION,
+				PermissionsAndroid.PERMISSIONS.BLUETOOTH_CONNECT,
+				PermissionsAndroid.PERMISSIONS.BLUETOOTH_SCAN
+			]).then((result) => {
+				if (result['android.permission.ACCESS_COARSE_LOCATION'] 
+				&& result['android.permission.BLUETOOTH_SCAN'] 
+				&& result['android.permission.BLUETOOTH_CONNECT']
+				=== 'granted') {
+					locPermission = true;
+					scanPermission = true;
+					connectPermission = true;
+					console.log("All Permission granted");
+				} else {
+					console.log("some Permission has denied");
+				}
+			})
+		}
+	  }
 	  
 	  return (() => {
 		

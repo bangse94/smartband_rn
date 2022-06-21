@@ -57,9 +57,33 @@ import React, {
 	  }
 	  console.log('Disconnected from ' + data.peripheral);
 	}
+
+	const updateAndRead = () => {
+		BleManager.getConnectedPeripherals([]).then((results) => {
+			//console.log("Connected devices : " + JSON.stringify(results));
+			if (results.length == 0) {
+				console.log('No Connected peripherals');
+			} else {
+				for(var i = 0 ; i < results.length ; i++) {
+					BleManager.retrieveServices(results[i].id).then((peripheralData) => {
+						console.log(peripheralData);
+						console.log(peripheralData.services[2].uuid);
+						console.log(peripheralData.characteristics[4].characteristic);
+						BleManager.read(peripheralData.id, peripheralData.advertising.serviceUUIDs[0], peripheralData.characteristics[4].characteristic).then((readData) => {
+							console.log("Read: " + readData);
+						})
+						.catch((error) => {
+							console.log(error);
+						})
+					})
+				}
+			}
+		})
+	}
   
 	const handleUpdateValueForCharacteristic = (data) => {
-	  console.log('Received data from ' + data.peripheral + ' characteristic ' + data.characteristic, data.value);
+			console.log('data update --');
+			console.log('Received data from ' + data.peripheral + ' characteristic ' + data.characteristic + String.fromCharCode.apply(null, data.value));
 	}
   
 	const retrieveConnected = () => {
@@ -132,26 +156,84 @@ import React, {
 	  bleManagerEmitter.addListener('BleManagerDiscoverPeripheral', handleDiscoverPeripheral);
 	  bleManagerEmitter.addListener('BleManagerStopScan', handleStopScan );
 	  bleManagerEmitter.addListener('BleManagerDisconnectPeripheral', handleDisconnectedPeripheral );
-	  bleManagerEmitter.addListener('BleManagerDidUpdateValueForCharacteristic', handleUpdateValueForCharacteristic );
-  
+	  //bleManagerEmitter.addListener('BleManagerDidUpdateValueForCharacteristic', handleUpdateValueForCharacteristic);
+
+	  locPermission = false;
+	  scanPermission = false;
+	  connectPermission = false;
+
 	  if (Platform.OS === 'android' && Platform.Version >= 23) {
 		PermissionsAndroid.check(PermissionsAndroid.PERMISSIONS.ACCESS_COARSE_LOCATION).then((result) => {
 			if (result) {
-			  console.log("Permission is OK");
+				console.log("Bluetooth Permission is OK");
+				locPermission = true;
 			} else {
-			  PermissionsAndroid.request(PermissionsAndroid.PERMISSIONS.ACCESS_COARSE_LOCATION).then((result) => {
-				if (result) {
-				  console.log("User accept");
-				} else {
-				  console.log("User refuse");
-				}
-			  });
+				console.log("Bluetooth Permission has denied")
+				locPermission = false;
 			}
 		});
+		PermissionsAndroid.check(PermissionsAndroid.PERMISSIONS.BLUETOOTH_SCAN).then((result) => {
+			if (result) {
+				console.log("Scan Permission is OK");
+				scanPermission = true;
+			} else {
+				console.log("Scan Permission has denied");
+				scanPermission = false;
+			}
+		});
+		PermissionsAndroid.check(PermissionsAndroid.PERMISSIONS.BLUETOOTH_CONNECT).then((result) => {
+			if (result) {
+				console.log("Connect Permission is OK");
+				connectPermission = true;
+			} else {
+				console.log("Connect Permission has denied");
+				connectPermission = false;
+			}
+		});
+
+		if (locPermission && scanPermission && connectPermission) {
+			console.log("All Permission is OK");
+		} else {
+			PermissionsAndroid.requestMultiple([
+				PermissionsAndroid.PERMISSIONS.ACCESS_COARSE_LOCATION,
+				PermissionsAndroid.PERMISSIONS.BLUETOOTH_CONNECT,
+				PermissionsAndroid.PERMISSIONS.BLUETOOTH_SCAN
+			]).then((result) => {
+				if (result['android.permission.ACCESS_COARSE_LOCATION'] 
+				&& result['android.permission.BLUETOOTH_SCAN'] 
+				&& result['android.permission.BLUETOOTH_CONNECT']
+				=== 'granted') {
+					locPermission = true;
+					scanPermission = true;
+					connectPermission = true;
+					console.log("All Permission granted");
+				} else {
+					console.log("some Permission has denied");
+				}
+			})
+		}
 	  }
-	  
-	  retrieveConnected();
-	  
+
+	  setTimeout(() => {
+		  BleManager.getConnectedPeripherals([]).then((devices) => {
+			  for(var i = 0; i < devices.length ; i++) {
+				BleManager.retrieveServices(devices[i].id).then((data) => {
+					console.log('data --')
+					console.log(data.advertising.serviceUUIDs[0]);
+					console.log(data.characteristics[4].characteristic);
+					BleManager.startNotification(data.id, data.advertising.serviceUUIDs[0], data.characteristics[4].characteristic).then(() => {
+						console.log(data.id);
+						console.log("Notification started " , [i]);
+					}).catch((error) => {
+						console.log(error);
+					})
+				})
+			  }
+		  })
+		  
+		  retrieveConnected();
+		  //updateAndRead();
+	  }, 500);
 	  return (() => {
 		
 	  })
@@ -169,6 +251,10 @@ import React, {
 		</View>
 	  );
 	}
+
+	setInterval(() => {
+		
+	}, 1000);
   
 	return (
     <>
@@ -186,7 +272,7 @@ import React, {
             <View style={{margin: 10}}>
               <Button
                 title="Reload"
-                onPress={() => retrieveConnected()}
+                onPress={() => updateAndRead()}
               />
             </View>
 

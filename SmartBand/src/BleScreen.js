@@ -22,7 +22,7 @@ import React, {
 	Colors,
   } from 'react-native/Libraries/NewAppScreen';
   
-  import BleManager from 'react-native-ble-manager';
+  import BleManager, { connect, scan } from 'react-native-ble-manager';
   const BleManagerModule = NativeModules.BleManager;
   const bleManagerEmitter = new NativeEventEmitter(BleManagerModule);
   
@@ -132,23 +132,64 @@ import React, {
 	  bleManagerEmitter.addListener('BleManagerDiscoverPeripheral', handleDiscoverPeripheral);
 	  bleManagerEmitter.addListener('BleManagerStopScan', handleStopScan );
 	  bleManagerEmitter.addListener('BleManagerDisconnectPeripheral', handleDisconnectedPeripheral );
-	  bleManagerEmitter.addListener('BleManagerDidUpdateValueForCharacteristic', handleUpdateValueForCharacteristic );
+	  //bleManagerEmitter.addListener('BleManagerDidUpdateValueForCharacteristic', handleUpdateValueForCharacteristic );
   
+
+	  var locPermission = false;
+	  var scanPermission = false;
+	  var connectPermission = false;
+
 	  if (Platform.OS === 'android' && Platform.Version >= 23) {
 		PermissionsAndroid.check(PermissionsAndroid.PERMISSIONS.ACCESS_COARSE_LOCATION).then((result) => {
 			if (result) {
-			  console.log("Permission is OK");
+				console.log("Bluetooth Permission is OK");
+				locPermission = true;
 			} else {
-			  PermissionsAndroid.request(PermissionsAndroid.PERMISSIONS.ACCESS_COARSE_LOCATION).then((result) => {
-				if (result) {
-				  console.log("User accept");
-				} else {
-				  console.log("User refuse");
-				}
-			  });
+				console.log("Bluetooth Permission has denied")
+				locPermission = false;
 			}
 		});
-	  }  
+		PermissionsAndroid.check(PermissionsAndroid.PERMISSIONS.BLUETOOTH_SCAN).then((result) => {
+			if (result) {
+				console.log("Scan Permission is OK");
+				scanPermission = true;
+			} else {
+				console.log("Scan Permission has denied");
+				scanPermission = false;
+			}
+		});
+		PermissionsAndroid.check(PermissionsAndroid.PERMISSIONS.BLUETOOTH_CONNECT).then((result) => {
+			if (result) {
+				console.log("Connect Permission is OK");
+				connectPermission = true;
+			} else {
+				console.log("Connect Permission has denied");
+				connectPermission = false;
+			}
+		});
+
+		if (locPermission && scanPermission && connectPermission) {
+			console.log("All Permission is OK");
+		} else {
+			PermissionsAndroid.requestMultiple([
+				PermissionsAndroid.PERMISSIONS.ACCESS_COARSE_LOCATION,
+				PermissionsAndroid.PERMISSIONS.BLUETOOTH_CONNECT,
+				PermissionsAndroid.PERMISSIONS.BLUETOOTH_SCAN
+			]).then((result) => {
+				if (result['android.permission.ACCESS_COARSE_LOCATION'] 
+				&& result['android.permission.BLUETOOTH_SCAN'] 
+				&& result['android.permission.BLUETOOTH_CONNECT']
+				=== 'granted') {
+					locPermission = true;
+					scanPermission = true;
+					connectPermission = true;
+					console.log("All Permission granted");
+				} else {
+					console.log("some Permission has denied");
+				}
+			})
+		}
+	  } 
 	  
 	  return (() => {
 		
@@ -162,7 +203,7 @@ import React, {
 		  <View style={[styles.row, {backgroundColor: color}]}>
 			<Text style={{fontSize: 12, textAlign: 'center', color: '#333333', padding: 10}}>{item.name}</Text>
 			<Text style={{fontSize: 10, textAlign: 'center', color: '#333333', padding: 2}}>RSSI: {item.rssi}</Text>
-			<Text style={{fontSize: 8, textAlign: 'center', color: '#333333', padding: 2, paddingBottom: 20}}>{item.id}</Text>
+			<Text style={{fontSize: 8, textAlign: 'center', color: '#333333', padding: 2}}>{item.id}</Text>
 		  </View>
 		</TouchableHighlight>
 	  );
@@ -191,6 +232,10 @@ import React, {
   
 			  <View style={{margin: 10}}>
 				<Button title="Retrieve connected peripherals" onPress={() => retrieveConnected() } />
+			  </View>
+
+			  <View style={{margin: 10}}>
+				<Button title="Read Data" onPress={() => updateAndRead()} />
 			  </View>
   
 			  {(list.length == 0) &&
