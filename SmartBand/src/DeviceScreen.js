@@ -32,6 +32,17 @@ const App = ({navigation}) => {
   var scanPermission = false;
   var connectPermission = false;
 
+
+  // for calculate METs
+  var ax = 0;
+  var ay = 0;
+  var az = 0;
+  var energy = 0;
+  var energySum = 0;
+  var kcal = 0;
+  var childWeight = 20;
+  var MET = 0;
+
   const startScan = () => {
     if (!isScanning) {
       BleManager.scan([], 3, true)
@@ -75,9 +86,14 @@ const App = ({navigation}) => {
 	var inputDataString = String.fromCharCode.apply(null, data.value);
 	inputDataString = inputDataString.slice(1, -4);
 	var inputDataArray = inputDataString.split(",");
-	for (var i = 0 ; i < inputDataArray.length ; i++){
-		sumData[i] = sumData[i] + Number(inputDataArray[i]);
-	}
+	// for (var i = 0 ; i < inputDataArray.length ; i++){
+	// 	sumData[i] = sumData[i] + Number(inputDataArray[i]);
+	// }
+	ax = Number(inputDataArray[-3]);
+	ay = Number(inputDataArray[-2]);
+	az = Number(inputDataArray[-1]);
+	energy = Math.sqrt(Math.pow(ax,2) + Math.pow(ay, 2) + Math.pow(az, 2));
+	energySum = energySum + energy;
   };
 
   const retrieveConnected = () => {
@@ -245,14 +261,19 @@ const App = ({navigation}) => {
     }, 500);
 
 	setInterval(() => {
-		console.log("sum data : " , sumData);
-	  for(var i = 0 ; i < sumData.length ; i++) {
-		  averageData[i] = sumData[i] / dataCnt;
-	  }
-	  console.log("average data : " ,averageData);
-	  dataCnt = 0;
-	  averageData = [0,0,0,0,0,0];
-	  sumData = [0,0,0,0,0,0];
+	//   console.log("sum data : " , sumData);
+	//   for(var i = 0 ; i < sumData.length ; i++) {
+	// 	  averageData[i] = sumData[i] / dataCnt;
+	//   }
+	//   console.log("average data : " ,averageData);
+	//   dataCnt = 0;
+	//   averageData = [0,0,0,0,0,0];
+	//   sumData = [0,0,0,0,0,0];
+	//   MET = 1.8290 + (1.0176*0.0001*energySum);
+      kcal = (3.692*Math.pow(10, -5))*energySum+1.728;
+	  METs = (7*kcal)/(400*childWeight);
+	  console.log(kcal);
+	  console.log("METs-min : " +METs);
 	}, 60000);
     return () => {};
   }, []);
